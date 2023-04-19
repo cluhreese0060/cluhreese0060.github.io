@@ -48,7 +48,7 @@ async function fetchData() {
   angleMode(DEGREES);
   canvas = createCanvas(500 * scaleFactor, 500 * scaleFactor, P2D);
   textAlign(CENTER, CENTER);
-  background('rgba(0, 0, 0, 0.5)');
+  background('rgba(255, 255, 255, 0.5)');
   
   push();
   textFont(helvet);
