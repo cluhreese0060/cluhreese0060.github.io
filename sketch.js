@@ -1,3 +1,6 @@
+
+
+
 // Fonts
 let helvet;
 let bodoni;
@@ -18,6 +21,11 @@ let weatherOptions;
 let weatherImgs;
 let scaleFactor;
 
+//API Variables
+const API_URL = "https://api.openweathermap.org/data/2.5/weather?lat=43.1940&lon=-80.3845&appid=0b2896ea938f5a6ed8b67e94b5acc839";
+let weatherIcon = "";
+
+
 // Interactive Elements
 let daySelect;
 let monthSelect;
@@ -26,19 +34,16 @@ let weatherSelect;
 let timeInput;
 let saveBtn;
 
-function preload() {
-  helvet = loadFont('HelveticaNowDisplayXBlk.otf');
-  bodoni = loadFont('BOD.TTF');
-  timesNR = loadFont('timesbd.ttf');
-  p5Day = loadFont('P5DayOfWeek.ttf');
-  weatherImgs = [loadImage('Weather Icons/Sun.png'), loadImage('Weather Icons/Cloud.png'), 
-                 loadImage('Weather Icons/Umbrella.png'), loadImage('Weather Icons/Snow.png'),
-                 loadImage('Weather Icons/Moon.png')]
-  weatherOptions = ["SUNNY", "CLOUDY", "RAINY", "SNOWY", "NIGHT"];
-}
-
-function setup() {
-  scaleFactor = 1;
+async function fetchData() {
+  try {
+    const response = await fetch("https://api.openweathermap.org/data/2.5/weather?lat=43.1940&lon=-80.3845&appid=0b2896ea938f5a6ed8b67e94b5acc839");
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const result = await response.json();
+    weatherIcon = result.weather[0].icon.substring(0,2);
+    console.log(weatherIcon);
+    scaleFactor = 1;
   
   angleMode(DEGREES);
   canvas = createCanvas(500 * scaleFactor, 500 * scaleFactor, P2D);
@@ -51,35 +56,17 @@ function setup() {
   textSize(50);
   textAlign(LEFT);
   scale(0.4, 1);
-  text("Month / Day / Year (0000 - 9999)", 5, 470 * scaleFactor);
   pop();
   
-  monthSelect = createSelect();
-  monthSelect.position(0, 500 * scaleFactor);
-  monthSelect.option("Current Month");
-  for (let i = 1; i < 13; i++)
-    monthSelect.option(i);
-  monthSelect.changed(changeMonth);
-  
-  yearInput = createInput("" + year());
-  yearInput.position(205, 500 * scaleFactor);
-  yearInput.input(changeYear);
-  
-  resetDaySelect();
+
   
   daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  console.log(day());
   daySet = day();
   monthSet = month();
   yearSet = year();
   dayText = daysOfWeek[doomsdayAlg()];
-  
-  weatherSelect = createSelect();
-  weatherSelect.position(0, 500 * scaleFactor + 21);
-  for (let i = 0; i < weatherOptions.length; i++) {
-    weatherSelect.option(weatherOptions[i]);
-  }
-  weatherSelect.changed(changeWeather);
-  weatherSet = weatherSelect.value();
+  weatherSet = "SUNNY";
   
   if (hour() >= 3 && hour() < 7) {
     timeOfDay = "Early\nMorning";
@@ -101,15 +88,30 @@ function setup() {
     lengthTimeTxt = timeOfDay;
   }
   
-  timeInput = createInput(timeOfDay);
-  timeInput.position(74, 500 * scaleFactor + 21);
-  timeInput.input(changeTimeOfDay);
-  
-  saveBtn = createButton("Save");
-  saveBtn.position(348, 500 * scaleFactor);
-  saveBtn.mouseReleased(saveCreation);
-  
+
   drawDate();
+  } catch (error) {
+    console.error('There was a problem with the fetch operation:', error);
+  }
+}
+
+
+
+function preload() {
+  
+  helvet = loadFont('HelveticaNowDisplayXBlk.otf');
+  bodoni = loadFont('BOD.TTF');
+  timesNR = loadFont('timesbd.ttf');
+  p5Day = loadFont('P5DayOfWeek.ttf');
+  weatherImgs = [loadImage('Weather Icons/Sun.png'), loadImage('Weather Icons/Cloud.png'), 
+                 loadImage('Weather Icons/Umbrella2.png'), loadImage('Weather Icons/Snow.png'),
+                 loadImage('Weather Icons/Moon.png'),loadImage('Weather Icons/Mist.png')]
+  weatherOptions = ["SUNNY", "CLOUDY", "RAINY", "SNOWY", "NIGHT"];
+}
+
+function setup() {
+  fetchData();
+  
 }
 
 // ----- P5 Date -----
@@ -156,7 +158,8 @@ function drawDate() {
   drawMonthPart(0, 30);
   drawDayText(0, 0, 60);
   drawTimeText(0, 0);
-  drawWeather(weatherSet);
+
+  drawWeather();
   
   push();
   fill(0);
@@ -280,15 +283,7 @@ function drawDayText(fillCol, strokeCol, weight) {
   fill(fillCol);
   stroke(strokeCol);
   strokeWeight(weight);
-  //scale(0.67, 1, 1);
-  
-  // For mimicing actual P5 days
-  // push();
-  // textFont(p5Day);
-  // textSize(51.4);
-  // fill('rgba(0, 0, 0, 0.5)');
-  // text(6, -7, 65);
-  // pop();
+
   
   if (dayText == "MON") {
     push();
@@ -427,25 +422,36 @@ function drawTimeText(color, weight) {
   pop();
 }
 
-function drawWeather(weather) {
+function drawWeather() {
   push();
-  
+  let weather = weatherIcon;
+  console.log(weather)
   rotate(-20.3);
   if (daySet >= 10)
     translate(220, 265);
   else
     translate(150, 265);
   
-  if (weather == "SUNNY") {
-    image(weatherImgs[0], 0, 0);
-  } else if (weather == "CLOUDY") {
+  if (weather == "01") {
+    if(timeOfDay == 'Evening' || timeOfDay == 'Nighttime')
+    {
+      image(weatherImgs[4], 0, 0);
+    }
+    else
+    {
+      image(weatherImgs[0], 0, 0);
+    }
+  } else if (weather == '03' || weather == '04') {
     image(weatherImgs[1], 0, 0);
-  } else if (weather == "RAINY") {
+  } else if (weather == "09" || weather == "10" || weather == "11") {
     image(weatherImgs[2], 0, 0);
-  } else if (weather == "SNOWY") {
+  } else if (weather == "13") {
     image(weatherImgs[3], 0, 0);
-  } else if (weather == "NIGHT") {
-    image(weatherImgs[4], 0, 0);
+  } else if (weather == "50") {
+    image(weatherImgs[5], 0, 0);
+  }
+  else{
+    image(weatherImgs[3],0,0);
   }
   
   pop();
@@ -528,53 +534,18 @@ function resetCanvas(haveBG) {
 }
 
 function changeMonth() {
-  if (monthSelect.value() == "Current Month") {
-    monthSet = month();
-  } else {
-    monthSet = monthSelect.value();
-  }
-  
-  if (monthSet == 1 || monthSet == 3 || monthSet == 5 || 
-      monthSet == 7 || monthSet == 8 || monthSet == 10 || monthSet == 12) {
-    daySet = constrain(daySet, 1, 31);
-  } else if (monthSet == 2) {
-    if (yearSet % 4 == 0)
-      daySet = constrain(daySet, 1, 29);
-    else
-      daySet = constrain(daySet, 1, 28);
-  } else {
-    daySet = constrain(daySet, 1, 30);
-  }
-  
+
   resetDaySelect();
   resetCanvas(true);
 }
 
 function changeDay() {
-  if (daySelect.value() == "Current Day") {
-    daySet = day();
-  } else {
-    daySet = daySelect.value();
-  }
-  
-  if (monthSet == 1 || monthSet == 3 || monthSet == 5 || 
-      monthSet == 7 || monthSet == 8 || monthSet == 10 || monthSet == 12) {
-    daySet = constrain(daySet, 1, 31);
-  } else if (monthSet == 2) {
-    if (yearSet % 4 == 0)
-      daySet = constrain(daySet, 1, 29);
-    else
-      daySet = constrain(daySet, 1, 28);
-  } else {
-    daySet = constrain(daySet, 1, 30);
-  }
-  
+
   resetCanvas(true);
 }
 
 function changeYear() {
   yearSet = constrain(this.value(), 0, 9999);
-  
   resetDaySelect();
   resetCanvas(true);
 }
